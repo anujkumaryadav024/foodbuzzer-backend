@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.example.food_buzzer_backend.dto.request.LoginRequest;
 import com.example.food_buzzer_backend.dto.request.RegisterOwnerRequest;
 import com.example.food_buzzer_backend.dto.response.LoginResponse;
+import com.example.food_buzzer_backend.dto.response.RegisterOwnerResponse;
 import com.example.food_buzzer_backend.model.Restaurant;
 import com.example.food_buzzer_backend.model.User;
 import com.example.food_buzzer_backend.repository.RestaurantRepository;
@@ -43,28 +44,17 @@ public class AuthService {
         return new LoginResponse(user.getId(), user.getRole(), "Login successful");
     }
 
-    public String registerOwner(RegisterOwnerRequest request){
+    public RegisterOwnerResponse registerOwner(RegisterOwnerRequest request){
 
         User user = new User();
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword());
-        user.setPhone(request.getPhone());
         user.setRole("OWNER");
+        user.setIsActive(true);
 
         userRepository.save(user);
 
-        Restaurant restaurant = new Restaurant();
-        restaurant.setName(request.getRestaurantName());
-        restaurant.setSlug(request.getSlug());
-        restaurant.setAddress(request.getAddress());
-        restaurant.setCity(request.getCity());
-        restaurant.setZipcode(request.getZipcode());
-        restaurant.setPhone(request.getRestaurantPhone());
-        restaurant.setOwner(user);
-
-        restaurantRepository.save(restaurant);
-
-        return "Restaurant registration submitted for approval";
+        return new RegisterOwnerResponse(user.getId(), user.getRole(), "Owner registered successful");
     }
 }

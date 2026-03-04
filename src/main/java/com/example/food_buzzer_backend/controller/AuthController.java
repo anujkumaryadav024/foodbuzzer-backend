@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.food_buzzer_backend.dto.request.LoginRequest;
 import com.example.food_buzzer_backend.dto.request.RegisterOwnerRequest;
 import com.example.food_buzzer_backend.dto.response.LoginResponse;
+import com.example.food_buzzer_backend.dto.response.RegisterOwnerResponse;
 import com.example.food_buzzer_backend.service.AuthService;
 
 @RestController
@@ -22,9 +23,10 @@ public class AuthController {
     public LoginResponse login(@RequestBody LoginRequest request){
         return authService.login(request);
     }
-
+    
     @PostMapping("/register-owner")
-    public String registerOwner(@RequestBody RegisterOwnerRequest request){
+    public RegisterOwnerResponse registerOwner(@RequestBody RegisterOwnerRequest request){
+
         return authService.registerOwner(request);
     }
 }
