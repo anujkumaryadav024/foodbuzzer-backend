@@ -1,4 +1,4 @@
-package com.example.food_buzzer_backend.dto.response;
+package com.example.food_buzzer_backend.dto.restaurant;
 
 public class CreateRestaurantResponse {
 

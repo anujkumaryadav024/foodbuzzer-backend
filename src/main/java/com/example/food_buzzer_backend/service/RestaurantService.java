@@ -2,8 +2,9 @@ package com.example.food_buzzer_backend.service;
 
 import org.springframework.stereotype.Service;
 
-import com.example.food_buzzer_backend.dto.request.CreateRestaurantRequest;
-import com.example.food_buzzer_backend.dto.response.CreateRestaurantResponse;
+import com.example.food_buzzer_backend.config.AppConstants;
+import com.example.food_buzzer_backend.dto.restaurant.CreateRestaurantRequest;
+import com.example.food_buzzer_backend.dto.restaurant.CreateRestaurantResponse;
 import com.example.food_buzzer_backend.model.Restaurant;
 import com.example.food_buzzer_backend.model.User;
 import com.example.food_buzzer_backend.repository.RestaurantRepository;
@@ -21,10 +22,22 @@ public class RestaurantService {
         this.userRepository = userRepository;
     }
 
-    public CreateRestaurantResponse createRestaurantResponse(CreateRestaurantRequest request){
+    public CreateRestaurantResponse createRestaurant(CreateRestaurantRequest request, Long userId){
 
-        User owner = userRepository.findById(request.getOwnerUserId())
-                .orElseThrow(() -> new RuntimeException("Owner not found"));
+        User owner = userRepository.findById(userId)
+                .orElse(null);
+
+        if (owner == null) {
+            return new CreateRestaurantResponse(null, AppConstants.ERROR_USER_NOT_FOUND);
+        }
+
+        if (!AppConstants.ROLE_OWNER.equalsIgnoreCase(owner.getRole())) {
+            return new CreateRestaurantResponse(null, AppConstants.ERROR_USER_NOT_OWNER);
+        }
+
+        if (owner.getAccessLevel() == null || owner.getAccessLevel() < AppConstants.ACCESS_LEVEL_OWNER) {
+            return new CreateRestaurantResponse(null, AppConstants.ERROR_INSUFFICIENT_ACCESS);
+        }
 
         Restaurant restaurant = new Restaurant();
 
@@ -35,6 +48,10 @@ public class RestaurantService {
         restaurant.setZipcode(request.getZipcode());
         restaurant.setPhone(request.getPhone());
         restaurant.setOwner(owner);
+        restaurant.setApprovalStatus(AppConstants.APPROVAL_STATUS_PENDING);
+        restaurant.setApprovalNote(AppConstants.EMPTY_STRING);
+        restaurant.setIsLive(AppConstants.DEFAULT_RESTAURANT_LIVE);
+
 
         restaurantRepository.save(restaurant);
 

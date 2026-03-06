@@ -1,4 +1,6 @@
 package com.example.food_buzzer_backend.model;
+
+import com.example.food_buzzer_backend.config.AppConstants;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -23,21 +25,15 @@ public class User {
 
     private String role;
 
-    private Boolean isActive = true;
+    private Integer accessLevel = AppConstants.ACCESS_LEVEL_DEFAULT;
+
+    private Boolean isActive = AppConstants.DEFAULT_USER_ACTIVE;
 
     private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
 
     @PrePersist
     public void onCreate(){
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void onUpdate(){
-        updatedAt = LocalDateTime.now();
     }
 
     public User(){}
@@ -67,4 +63,8 @@ public class User {
     public Boolean getIsActive(){ return isActive; }
 
     public void setIsActive(Boolean isActive){ this.isActive = isActive; }
+
+    public Integer getAccessLevel(){ return accessLevel; }
+
+    public void setAccessLevel(Integer accessLevel){ this.accessLevel = accessLevel; }
 }

@@ -1,8 +1,6 @@
-package com.example.food_buzzer_backend.dto.request;
+package com.example.food_buzzer_backend.dto.restaurant;
 
 public class CreateRestaurantRequest {
-
-    private Long ownerUserId;
 
     private String name;
     private String slug;
@@ -12,14 +10,6 @@ public class CreateRestaurantRequest {
     private String phone;
 
     public CreateRestaurantRequest(){}
-
-    public Long getOwnerUserId() {
-        return ownerUserId;
-    }
-
-    public void setOwnerUserId(Long ownerUserId) {
-        this.ownerUserId = ownerUserId;
-    }
 
     public String getName() {
         return name;

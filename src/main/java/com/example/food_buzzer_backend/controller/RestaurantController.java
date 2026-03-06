@@ -2,8 +2,9 @@ package com.example.food_buzzer_backend.controller;
 
 import org.springframework.web.bind.annotation.*;
 
-import com.example.food_buzzer_backend.dto.request.CreateRestaurantRequest;
-import com.example.food_buzzer_backend.dto.response.CreateRestaurantResponse;
+import com.example.food_buzzer_backend.config.AppConstants;
+import com.example.food_buzzer_backend.dto.restaurant.CreateRestaurantRequest;
+import com.example.food_buzzer_backend.dto.restaurant.CreateRestaurantResponse;
 import com.example.food_buzzer_backend.service.RestaurantService;
 
 @RestController
@@ -17,8 +18,9 @@ public class RestaurantController {
     }
 
     @PostMapping
-    public CreateRestaurantResponse createRestaurantResponse(@RequestBody CreateRestaurantRequest request){
-
-        return restaurantService.createRestaurantResponse(request);
+    public CreateRestaurantResponse createRestaurant(
+            @RequestHeader(name = "X-User-Id" , required = true) Long userId,
+            @RequestBody CreateRestaurantRequest request){
+        return restaurantService.createRestaurant(request, userId);
     }
 }

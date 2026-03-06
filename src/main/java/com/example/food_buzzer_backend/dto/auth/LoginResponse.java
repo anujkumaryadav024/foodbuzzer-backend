@@ -1,4 +1,4 @@
-package com.example.food_buzzer_backend.dto.response;
+package com.example.food_buzzer_backend.dto.auth;
 public class LoginResponse {
 
     private Long userId;

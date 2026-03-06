@@ -3,10 +3,10 @@ package com.example.food_buzzer_backend.controller;
 
 import org.springframework.web.bind.annotation.*;
 
-import com.example.food_buzzer_backend.dto.request.LoginRequest;
-import com.example.food_buzzer_backend.dto.request.RegisterOwnerRequest;
-import com.example.food_buzzer_backend.dto.response.LoginResponse;
-import com.example.food_buzzer_backend.dto.response.RegisterOwnerResponse;
+import com.example.food_buzzer_backend.dto.auth.LoginRequest;
+import com.example.food_buzzer_backend.dto.auth.LoginResponse;
+import com.example.food_buzzer_backend.dto.auth.RegisterOwnerRequest;
+import com.example.food_buzzer_backend.dto.auth.RegisterOwnerResponse;
 import com.example.food_buzzer_backend.service.AuthService;
 
 @RestController
@@ -26,7 +26,6 @@ public class AuthController {
     
     @PostMapping("/register-owner")
     public RegisterOwnerResponse registerOwner(@RequestBody RegisterOwnerRequest request){
-
         return authService.registerOwner(request);
     }
 }

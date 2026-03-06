@@ -3,24 +3,21 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.example.food_buzzer_backend.dto.request.LoginRequest;
-import com.example.food_buzzer_backend.dto.request.RegisterOwnerRequest;
-import com.example.food_buzzer_backend.dto.response.LoginResponse;
-import com.example.food_buzzer_backend.dto.response.RegisterOwnerResponse;
-import com.example.food_buzzer_backend.model.Restaurant;
+import com.example.food_buzzer_backend.config.AppConstants;
+import com.example.food_buzzer_backend.dto.auth.LoginRequest;
+import com.example.food_buzzer_backend.dto.auth.LoginResponse;
+import com.example.food_buzzer_backend.dto.auth.RegisterOwnerRequest;
+import com.example.food_buzzer_backend.dto.auth.RegisterOwnerResponse;
 import com.example.food_buzzer_backend.model.User;
-import com.example.food_buzzer_backend.repository.RestaurantRepository;
 import com.example.food_buzzer_backend.repository.UserRepository;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final RestaurantRepository restaurantRepository;
 
-    public AuthService(UserRepository userRepository, RestaurantRepository restaurantRepository){
+    public AuthService(UserRepository userRepository){
         this.userRepository = userRepository;
-        this.restaurantRepository = restaurantRepository;
     }
 
     public LoginResponse login(LoginRequest request){
@@ -46,12 +43,17 @@ public class AuthService {
 
     public RegisterOwnerResponse registerOwner(RegisterOwnerRequest request){
 
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            return new RegisterOwnerResponse(null, null, "Email already registered");
+        }
+
         User user = new User();
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword());
-        user.setRole("OWNER");
-        user.setIsActive(true);
+        user.setRole(AppConstants.ROLE_OWNER);
+        user.setAccessLevel(AppConstants.ACCESS_LEVEL_OWNER);
+        user.setIsActive(AppConstants.DEFAULT_USER_ACTIVE);
 
         userRepository.save(user);
 

@@ -1,4 +1,4 @@
-package com.example.food_buzzer_backend.dto.request;
+package com.example.food_buzzer_backend.dto.auth;
 
 public class RegisterOwnerRequest {
 

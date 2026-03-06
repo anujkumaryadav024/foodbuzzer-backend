@@ -1,5 +1,6 @@
 package com.example.food_buzzer_backend.model;
 
+import com.example.food_buzzer_backend.config.AppConstants;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -23,7 +24,11 @@ public class Restaurant {
 
     private String phone;
 
-    private String approvalStatus = "PENDING";
+    private String approvalStatus = AppConstants.APPROVAL_STATUS_PENDING;
+
+    private String approvalNote;
+
+    private boolean isLive = AppConstants.DEFAULT_RESTAURANT_LIVE;
 
     private LocalDateTime createdAt;
 
@@ -67,4 +72,20 @@ public class Restaurant {
     public User getOwner(){ return owner; }
 
     public void setOwner(User owner){ this.owner = owner; }
+
+    public String getApprovalStatus(){ return approvalStatus; }
+
+    public void setApprovalStatus(String approvalStatus){ this.approvalStatus = approvalStatus; }
+
+    public String getApprovalNote(){ return approvalNote; }
+
+    public void setApprovalNote(String approvalNote){ this.approvalNote = approvalNote; }
+
+    public boolean getIsLive(){ return isLive; }
+
+    public void setIsLive(boolean isLive){ this.isLive = isLive; }
+
+    public LocalDateTime getCreatedAt(){ return createdAt; }
+
+    public void setCreatedAt(LocalDateTime createdAt){ this.createdAt = createdAt; }
 }
