@@ -56,8 +56,10 @@ public class RestaurantService {
         restaurant.setApprovalNote(AppConstants.EMPTY_STRING);
         restaurant.setIsLive(AppConstants.DEFAULT_RESTAURANT_LIVE);
 
-
         restaurantRepository.save(restaurant);
+
+        owner.setRestaurant(restaurant);
+        userRepository.save(owner);
 
         return new CreateRestaurantResponse(restaurant.getId(), AppConstants.MSG_RESTAURANT_SUBMITTED_FOR_APPROVAL);
     }
