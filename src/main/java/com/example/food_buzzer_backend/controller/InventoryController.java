@@ -30,6 +30,7 @@ public class InventoryController {
      * URL: GET /api/inventory/all
      * Required Parameters:
      *   - X-Restaurant-Id (header): ID of the restaurant
+     *   - X-User-Id (header): ID of the user
      * 
      * Returns JSON array of all inventory items for the restaurant
      * 
@@ -41,6 +42,7 @@ public class InventoryController {
      *     {
      *       "id": 1,
      *       "restaurantId": 101,
+     *       "userId": 5,
      *       "name": "Tomatoes",
      *       "sku": "VEG-TOM-001",
      *       "category": "VEGETABLE",
@@ -58,14 +60,15 @@ public class InventoryController {
      */
     @GetMapping("/all")
     public ResponseEntity<?> getAllInventoryItems(
-            @RequestHeader(name = "X-Restaurant-Id", required = true) Long restaurantId) {
+            @RequestHeader(name = "X-Restaurant-Id", required = true) Long restaurantId,
+            @RequestHeader(name = "X-User-Id", required = true) Long userId) {
 
-        List<InventoryMaterialResponse> items = inventoryService.getAllInventoryItems(restaurantId);
+        List<InventoryMaterialResponse> items = inventoryService.getAllInventoryItems(restaurantId, userId);
 
-        // Check if restaurant ID is valid
+        // Check if restaurant or user is valid
         if (items == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiInventoryResponse(false, "Wrong restaurant id"));
+                    .body(new ApiInventoryResponse(false, "Wrong restaurant or user id"));
         }
 
         return ResponseEntity.ok(new ApiInventoryResponse(true, "All inventory items fetched successfully", items));
@@ -76,6 +79,7 @@ public class InventoryController {
      * URL: POST /api/inventory/add
      * Required Parameters:
      *   - X-Restaurant-Id (header): ID of the restaurant
+     *   - X-User-Id (header): ID of the user creating this item
      *   - Request Body (JSON): CreateInventoryMaterialRequest with fields:
      *     * name: String - Name of the material (e.g., "Tomatoes")
      *     * sku: String - Unique SKU code (e.g., "VEG-TOM-001")
@@ -103,6 +107,7 @@ public class InventoryController {
      *   "data": {
      *     "id": 1,
      *     "restaurantId": 101,
+     *     "userId": 5,
      *     "name": "Tomatoes",
      *     "sku": "VEG-TOM-001",
      *     "category": "VEGETABLE",
@@ -120,13 +125,14 @@ public class InventoryController {
     @PostMapping("/add")
     public ResponseEntity<?> addInventoryItem(
             @RequestHeader(name = "X-Restaurant-Id", required = true) Long restaurantId,
+            @RequestHeader(name = "X-User-Id", required = true) Long userId,
             @RequestBody CreateInventoryMaterialRequest request) {
 
-        InventoryMaterialResponse response = inventoryService.addInventoryItem(request, restaurantId);
+        InventoryMaterialResponse response = inventoryService.addInventoryItem(request, restaurantId, userId);
 
         if (response == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiInventoryResponse(false, "Failed to add inventory item. SKU might already exist or restaurant not found."));
+                    .body(new ApiInventoryResponse(false, "Failed to add inventory item. SKU might already exist or restaurant/user not found."));
         }
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -134,18 +140,35 @@ public class InventoryController {
     }
 
     /**
-     * Endpoint 3: Update current stock of an inventory item
+     * Endpoint 3: Update an inventory item record
      * URL: PUT /api/inventory/update-stock/{itemId}
      * Required Parameters:
      *   - itemId (path variable): ID of the inventory item to update
-     *   - Request Body (JSON): UpdateInventoryStockRequest with field:
-     *     * currentStock: Double - New stock quantity value
+     *   - X-Restaurant-Id (header): ID of the restaurant
+     *   - X-User-Id (header): ID of the user
+     *   - Request Body (JSON): UpdateInventoryStockRequest with fields to update
+     *     * name: String - Name of the material (optional)
+     *     * sku: String - Unique SKU code (optional)
+     *     * category: String - Category (optional)
+     *     * unit: String - Unit of measurement (optional)
+     *     * currentStock: Double - Current stock quantity (optional)
+     *     * reorderLevel: Double - Minimum stock before reorder (optional)
+     *     * costPerUnit: Double - Cost per unit (optional)
+     *     * isActive: Boolean - Whether the item is active (optional)
      * 
-     * Note: The updated_at timestamp is automatically updated by the system
+     * Note: Provide only the fields you want to update. The updated_at timestamp is automatically updated.
+     *       All provided fields will update the entire record.
      * 
-     * Example Request:
+     * Example Request (update entire record):
      * {
-     *   "currentStock": 15.5
+     *   "name": "Fresh Tomatoes",
+     *   "sku": "VEG-TOM-001",
+     *   "category": "VEGETABLE",
+     *   "unit": "kg",
+     *   "currentStock": 30.0,
+     *   "reorderLevel": 15,
+     *   "costPerUnit": 35,
+     *   "isActive": true
      * }
      * 
      * Example Response:
@@ -155,6 +178,7 @@ public class InventoryController {
      *   "data": {
      *     "id": 1,
      *     "restaurantId": 101,
+     *     "userId": 5,
      *     "name": "Tomatoes",
      *     "sku": "VEG-TOM-001",
      *     "category": "VEGETABLE",
@@ -173,13 +197,14 @@ public class InventoryController {
     public ResponseEntity<?> updateInventoryStock(
             @PathVariable Long itemId,
             @RequestHeader(name = "X-Restaurant-Id", required = true) Long restaurantId,
+            @RequestHeader(name = "X-User-Id", required = true) Long userId,
             @RequestBody UpdateInventoryStockRequest request) {
 
-        InventoryMaterialResponse response = inventoryService.updateInventoryStock(itemId, restaurantId, request.getCurrentStock());
+        InventoryMaterialResponse response = inventoryService.updateInventoryStock(itemId, restaurantId, userId, request);
 
         if (response == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiInventoryResponse(false, "Wrong restaurant id or item id"));
+                    .body(new ApiInventoryResponse(false, "Wrong restaurant or user id"));
         }
 
         return ResponseEntity.ok(new ApiInventoryResponse(true, "Inventory stock updated successfully", response));
@@ -190,6 +215,8 @@ public class InventoryController {
      * URL: DELETE /api/inventory/delete/{itemId}
      * Required Parameters:
      *   - itemId (path variable): ID of the inventory item to delete
+     *   - X-Restaurant-Id (header): ID of the restaurant
+     *   - X-User-Id (header): ID of the user
      * 
      * Note: This is a soft delete - the record is not removed from database,
      * but the is_delete column is set to true
@@ -201,6 +228,7 @@ public class InventoryController {
      *   "data": {
      *     "id": 1,
      *     "restaurantId": 101,
+     *     "userId": 5,
      *     "name": "Tomatoes",
      *     "sku": "VEG-TOM-001",
      *     "category": "VEGETABLE",
@@ -218,13 +246,14 @@ public class InventoryController {
     @DeleteMapping("/delete/{itemId}")
     public ResponseEntity<?> deleteInventoryItem(
             @PathVariable Long itemId,
-            @RequestHeader(name = "X-Restaurant-Id", required = true) Long restaurantId) {
+            @RequestHeader(name = "X-Restaurant-Id", required = true) Long restaurantId,
+            @RequestHeader(name = "X-User-Id", required = true) Long userId) {
 
-        InventoryMaterialResponse response = inventoryService.deleteInventoryItem(itemId, restaurantId);
+        InventoryMaterialResponse response = inventoryService.deleteInventoryItem(itemId, restaurantId, userId);
 
         if (response == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiInventoryResponse(false, "Wrong restaurant id or item id"));
+                    .body(new ApiInventoryResponse(false, "Wrong restaurant or user id"));
         }
 
         return ResponseEntity.ok(new ApiInventoryResponse(true, "Inventory item deleted successfully", response));
@@ -235,6 +264,7 @@ public class InventoryController {
      * URL: GET /api/inventory/search
      * Required Parameters:
      *   - X-Restaurant-Id (header): ID of the restaurant
+     *   - X-User-Id (header): ID of the user
      *   - name (query parameter): Exact name of the item to search for (case-insensitive, must match full name)
      * 
      * Example URL: GET /api/inventory/search?name=Tomatoes
@@ -249,6 +279,7 @@ public class InventoryController {
      *     {
      *       "id": 1,
      *       "restaurantId": 101,
+     *       "userId": 5,
      *       "name": "Tomatoes",
      *       "sku": "VEG-TOM-001",
      *       "category": "VEGETABLE",
@@ -267,13 +298,15 @@ public class InventoryController {
     @GetMapping("/search")
     public ResponseEntity<?> searchByName(
             @RequestHeader(name = "X-Restaurant-Id", required = true) Long restaurantId,
+            @RequestHeader(name = "X-User-Id", required = true) Long userId,
             @RequestParam(name = "name", required = true) String name) {
 
-        List<InventoryMaterialResponse> items = inventoryService.searchByName(restaurantId, name);
-// Check if restaurant ID is valid - returns null if invalid
+        List<InventoryMaterialResponse> items = inventoryService.searchByName(restaurantId, userId, name);
+        
+        // Check if restaurant or user is valid - returns null if invalid
         if (items == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiInventoryResponse(false, "Wrong restaurant id"));
+                    .body(new ApiInventoryResponse(false, "Wrong restaurant or user id"));
         }
 
         // Check if items were found with the given name
@@ -282,7 +315,6 @@ public class InventoryController {
                     .body(new ApiInventoryResponse(false, "Wrong name entered"));
         }
 
-        
         return ResponseEntity.ok(new ApiInventoryResponse(true, "Search results", items));
     }
 
@@ -291,8 +323,9 @@ public class InventoryController {
      * URL: GET /api/inventory/low-stock
      * Required Parameters:
      *   - X-Restaurant-Id (header): ID of the restaurant
+     *   - X-User-Id (header): ID of the user
      * 
-     * Returns JSON array of items with current_stock < 10
+     * Returns JSON array of items with current_stock < reorderLevel
      * 
      * Example Response:
      * {
@@ -302,6 +335,7 @@ public class InventoryController {
      *     {
      *       "id": 1,
      *       "restaurantId": 101,
+     *       "userId": 5,
      *       "name": "Tomatoes",
      *       "sku": "VEG-TOM-001",
      *       "category": "VEGETABLE",
@@ -310,13 +344,7 @@ public class InventoryController {
      *       "reorderLevel": 10,
      *       "costPerUnit": 30,
      *       "isActive": true,
-     *  // Check if restaurant ID is valid
-        if (items == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiInventoryResponse(false, "Wrong restaurant id"));
-        }
-
-             "isDeleted": false,
+     *       "isDeleted": false,
      *       "createdAt": "2026-03-01T10:00:00",
      *       "updatedAt": "2026-03-07T14:30:00"
      *     }
@@ -325,14 +353,15 @@ public class InventoryController {
      */
     @GetMapping("/low-stock")
     public ResponseEntity<?> getLowStockItems(
-            @RequestHeader(name = "X-Restaurant-Id", required = true) Long restaurantId) {
+            @RequestHeader(name = "X-Restaurant-Id", required = true) Long restaurantId,
+            @RequestHeader(name = "X-User-Id", required = true) Long userId) {
 
-        List<InventoryMaterialResponse> items = inventoryService.getLowStockItems(restaurantId);
+        List<InventoryMaterialResponse> items = inventoryService.getLowStockItems(restaurantId, userId);
 
-        // Check if restaurant ID is valid - returns null if invalid
+        // Check if restaurant or user is valid - returns null if invalid
         if (items == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiInventoryResponse(false, "Wrong restaurant id"));
+                    .body(new ApiInventoryResponse(false, "Wrong restaurant or user id"));
         }
 
         return ResponseEntity.ok(new ApiInventoryResponse(true, "Low stock items retrieved successfully", items));

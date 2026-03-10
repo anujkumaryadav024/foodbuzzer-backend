@@ -12,6 +12,7 @@ import java.math.BigDecimal;
  * - currentStock: Initial stock quantity (e.g., 25.5)
  * - reorderLevel: Minimum stock level before reorder (e.g., 10)
  * - costPerUnit: Cost per unit amount (e.g., 30)
+ * - userId: ID of the user creating this item (passed via X-User-Id header)
  */
 public class CreateInventoryMaterialRequest {
 

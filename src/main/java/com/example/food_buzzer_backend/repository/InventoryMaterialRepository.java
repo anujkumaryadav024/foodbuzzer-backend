@@ -24,8 +24,8 @@ public interface InventoryMaterialRepository extends JpaRepository<InventoryMate
     // Search by exact name for a specific restaurant (non-deleted items only) - exact match, case-insensitive
     List<InventoryMaterial> findByNameIgnoreCaseAndRestaurantIdAndIsDeletedFalse(String name, Long restaurantId);
 
-    // Get low stock items (current_stock < 10) for a restaurant
-    @Query("SELECT i FROM InventoryMaterial i WHERE i.restaurant.id = :restaurantId AND i.currentStock < 10 AND i.isDeleted = false")
+    // Get low stock items (current_stock < reorderLevel) for a restaurant
+    @Query("SELECT i FROM InventoryMaterial i WHERE i.restaurant.id = :restaurantId AND i.currentStock < i.reorderLevel AND i.isDeleted = false")
     List<InventoryMaterial> findLowStockItems(@Param("restaurantId") Long restaurantId);
 }
 
