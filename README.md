@@ -11,10 +11,11 @@ Spring Boot backend for FoodBuzzer app. Uses MySQL, JPA, and REST APIs for auth.
 
 1. Create a MySQL database:
    ```sql
+   
    CREATE DATABASE foodbuzzerdb;
    ```
 
-2. Edit `application.properties` and set `spring.datasource.username` and `spring.datasource.password`.
+2. Edit `application.properties` and set `spring.datasource.username` and `spring.datasource.password` as your mysql server username and password.
 
 ## Run
 

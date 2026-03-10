@@ -3,6 +3,7 @@ package com.example.food_buzzer_backend.controller;
 
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import com.example.food_buzzer_backend.dto.auth.LoginRequest;
 import com.example.food_buzzer_backend.dto.auth.LoginResponse;
 import com.example.food_buzzer_backend.dto.auth.RegisterOwnerRequest;
@@ -20,12 +21,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request){
+    public LoginResponse login(@Valid @RequestBody LoginRequest request){
         return authService.login(request);
     }
     
     @PostMapping("/register-owner")
-    public RegisterOwnerResponse registerOwner(@RequestBody RegisterOwnerRequest request){
+    public RegisterOwnerResponse registerOwner(@Valid @RequestBody RegisterOwnerRequest request){
         return authService.registerOwner(request);
     }
 }

@@ -31,6 +31,10 @@ public class User {
 
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "restaurant_id")
+    private Restaurant restaurant;
+
     @PrePersist
     public void onCreate(){
         createdAt = LocalDateTime.now();
@@ -71,4 +75,8 @@ public class User {
     public LocalDateTime getCreatedAt(){ return createdAt; }
 
     public void setCreatedAt(LocalDateTime createdAt){ this.createdAt = createdAt; }
+
+    public Restaurant getRestaurant(){ return restaurant; }
+
+    public void setRestaurant(Restaurant restaurant){ this.restaurant = restaurant; }
 }

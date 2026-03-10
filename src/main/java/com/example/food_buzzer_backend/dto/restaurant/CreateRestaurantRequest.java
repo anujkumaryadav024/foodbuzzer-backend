@@ -1,12 +1,25 @@
 package com.example.food_buzzer_backend.dto.restaurant;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class CreateRestaurantRequest {
 
+    @NotBlank(message = "Name is required")
     private String name;
+
+    @NotBlank(message = "Slug is required")
     private String slug;
+
+    @NotBlank(message = "Address is required")
     private String address;
+
+    @NotBlank(message = "City is required")
     private String city;
+
+    @NotBlank(message = "Zipcode is required")
     private String zipcode;
+
+    @NotBlank(message = "Phone number is required")
     private String phone;
 
     public CreateRestaurantRequest(){}

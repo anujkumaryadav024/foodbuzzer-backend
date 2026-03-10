@@ -1,5 +1,6 @@
 package com.example.food_buzzer_backend.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.food_buzzer_backend.dto.restaurant.CreateRestaurantRequest;
@@ -19,7 +20,7 @@ public class RestaurantController {
     @PostMapping
     public CreateRestaurantResponse createRestaurant(
             @RequestHeader(name = "X-User-Id", required = true) Long userId,
-            @RequestBody CreateRestaurantRequest request){
+            @Valid @RequestBody CreateRestaurantRequest request){
         return restaurantService.createRestaurant(request, userId);
     }
 }
