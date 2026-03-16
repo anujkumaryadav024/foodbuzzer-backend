@@ -27,5 +27,8 @@ public interface InventoryMaterialRepository extends JpaRepository<InventoryMate
     // Get low stock items (current_stock < reorderLevel) for a restaurant
     @Query("SELECT i FROM InventoryMaterial i WHERE i.restaurant.id = :restaurantId AND i.currentStock < i.reorderLevel AND i.isDeleted = false")
     List<InventoryMaterial> findLowStockItems(@Param("restaurantId") Long restaurantId);
+
+    // Find raw material for a recipe ensuring it is active and not deleted
+    Optional<InventoryMaterial> findByIdAndRestaurantIdAndIsActiveTrueAndIsDeletedFalse(Long id, Long restaurantId);
 }
 
