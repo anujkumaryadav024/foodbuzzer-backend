@@ -38,6 +38,10 @@ public class AuthService {
             return new LoginResponse(null, null, AppConstants.MSG_USER_INACTIVE);
         }
 
+        if(user.getRestaurant() == null){
+            return new LoginResponse(user.getId(), user.getRole(), AppConstants.MSG_USER_NOT_ASSIGNED_TO_RESTAURANT);
+        }
+
         return new LoginResponse(user.getId(), user.getRole(), AppConstants.MSG_LOGIN_SUCCESSFUL);
     }
 

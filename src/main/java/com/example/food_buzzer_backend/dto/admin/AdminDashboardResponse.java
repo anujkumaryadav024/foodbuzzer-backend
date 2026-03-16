@@ -11,8 +11,6 @@ public class AdminDashboardResponse {
     private long approvedRequestsCount;
     private long declinedRequestsCount;
     private String message;
-    private int statusCode;
-
 
     public AdminDashboardResponse() {}
 

@@ -48,6 +48,7 @@ public final class AppConstants {
     public static final String MSG_EMAIL_ALREADY_REGISTERED = "Email already registered";
     public static final String MSG_OWNER_REGISTERED_SUCCESSFUL = "Owner registered successful";
     public static final String MSG_RESTAURANT_SUBMITTED_FOR_APPROVAL = "Restaurant submitted for approval";
+    public static final String MSG_USER_NOT_ASSIGNED_TO_RESTAURANT = "User not associated with any restaurant";
 
     public static final String ERROR_USER_NOT_FOUND = "User not found";
     public static final String ERROR_USER_NOT_OWNER = "User is not an owner";

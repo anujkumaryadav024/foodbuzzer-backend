@@ -1,6 +1,13 @@
 package com.example.food_buzzer_backend.controller;
 
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.food_buzzer_backend.dto.admin.AdminApprovalRequest;
 import com.example.food_buzzer_backend.dto.admin.AdminApprovalResponse;
@@ -20,7 +27,7 @@ public class AdminController {
 
     // GET -> dashboard lists
     @GetMapping("/requests")
-    public AdminDashboardResponse getRequestByStatus(@RequestParam String status) {
+    public AdminDashboardResponse getRequestByStatus(@RequestParam(required = false) String status) {
         return adminService.getRequestsByStatus(status);
     }
 
