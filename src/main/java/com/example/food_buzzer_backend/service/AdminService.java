@@ -50,7 +50,13 @@ public class AdminService {
 
     public AdminDashboardResponse getRequestsByStatus(String status) {
         // Fetch restaurants grouped by status
-        List<Restaurant> restaurants = restaurantRepository.findByApprovalStatus(status.toLowerCase());
+        List<Restaurant> restaurants;
+        if (status == null || status.equalsIgnoreCase("all")) {
+            restaurants = restaurantRepository.findAll();
+            status = "all";
+        } else {
+            restaurants = restaurantRepository.findByApprovalStatus(status.toLowerCase());
+        }
 
         List<RestaurantDetailsResponse> responses = new ArrayList<>();
 
