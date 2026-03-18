@@ -6,8 +6,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "inventory_materials", uniqueConstraints = @UniqueConstraint(columnNames = {"restaurant_id", "sku"}))
-public class InventoryMaterial {
+@Table(name = "inventory_materials")
+public class InventoryMaterial{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

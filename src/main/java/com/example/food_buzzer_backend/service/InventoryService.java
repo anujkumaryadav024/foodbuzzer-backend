@@ -136,8 +136,8 @@ public class InventoryService {
             return null;
         }
         
-        // Check if SKU already exists for this restaurant (SKU must be unique per restaurant)
-        if (inventoryMaterialRepository.findBySkuAndRestaurantId(request.getSku(), restaurantId).isPresent()) {
+        // Check if active (non-deleted) SKU already exists for this restaurant
+        if (inventoryMaterialRepository.findBySkuAndRestaurantIdAndIsDeletedFalse(request.getSku(), restaurantId).isPresent()) {
             logger.warn("Item with SKU {} already exists for restaurant {}", request.getSku(), restaurantId);
             return null; // SKU already exists for this restaurant
         }
@@ -263,8 +263,9 @@ public class InventoryService {
             return null;
         }
         
-        // Mark item as deleted (soft delete - record stays in database)
+        // Mark item as deleted (soft delete - record stays in database) and inactive
         material.setIsDeleted(true);
+        material.setIsActive(false);
         
         // Save updated item to database
         InventoryMaterial deletedMaterial = inventoryMaterialRepository.save(material);

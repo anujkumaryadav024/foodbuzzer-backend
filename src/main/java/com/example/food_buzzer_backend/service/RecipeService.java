@@ -40,22 +40,23 @@ public class RecipeService {
     private UserRepository userRepository;
 
     @Transactional
-    public RecipeResponseDTO createRecipe(Long restaurantId, Long userId, RecipeRequestDTO requestDTO) {
-        Restaurant restaurant = restaurantRepository.findByIdAndIsLiveTrue(restaurantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
-                
+    public RecipeResponseDTO createRecipe(Long userId, RecipeRequestDTO requestDTO) {
         // Validate User and Access Level
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if (!user.getIsActive()) {
             throw new IllegalArgumentException("User is not active");
         }
-        if (user.getRestaurant() == null || !user.getRestaurant().getId().equals(restaurantId)) {
-            throw new IllegalArgumentException("User does not belong to this restaurant");
+        if (user.getRestaurant() == null) {
+            throw new IllegalArgumentException("User does not belong to any restaurant");
         }
         if (user.getAccessLevel() < AppConstants.ACCESS_LEVEL_MANAGER) {
             throw new IllegalArgumentException("User does not have permission to create recipes");
         }
+        Long restaurantId = user.getRestaurant().getId();
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsLiveTrue(restaurantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
 
         // 1. Create and save Recipe
         Recipe recipe = new Recipe();
@@ -80,16 +81,20 @@ public class RecipeService {
         return mapToResponseDTO(savedRecipe, items);
     }
 
-    public List<RecipeResponseDTO> getAllRecipes(Long restaurantId, Long userId) {
-        if (!restaurantRepository.existsByIdAndIsLiveTrue(restaurantId)) {
-            throw new ResourceNotFoundException("Restaurant not found");
-        }
-        
+    public List<RecipeResponseDTO> getAllRecipes(Long userId) {
         // Validate User
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        if (user.getRestaurant() == null || !user.getRestaurant().getId().equals(restaurantId)) {
-            throw new IllegalArgumentException("User does not belong to this restaurant");
+        if (!user.getIsActive()) {
+            throw new IllegalArgumentException("User is not active");
+        }
+        if (user.getRestaurant() == null) {
+            throw new IllegalArgumentException("User does not belong to any restaurant");
+        }
+        Long restaurantId = user.getRestaurant().getId();
+
+        if (!restaurantRepository.existsByIdAndIsLiveTrue(restaurantId)) {
+            throw new ResourceNotFoundException("Restaurant not found");
         }
 
         List<Recipe> recipes = recipeRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId);
@@ -100,19 +105,66 @@ public class RecipeService {
         }).collect(Collectors.toList());
     }
 
-    public RecipeResponseDTO getRecipeById(Long restaurantId, Long userId, Long recipeId) {
+    public RecipeResponseDTO getRecipeById(Long userId, Long recipeId) {
         // Validate User
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        if (user.getRestaurant() == null || !user.getRestaurant().getId().equals(restaurantId)) {
-            throw new IllegalArgumentException("User does not belong to this restaurant");
+        if (!user.getIsActive()) {
+            throw new IllegalArgumentException("User is not active");
         }
+        if (user.getRestaurant() == null) {
+            throw new IllegalArgumentException("User does not belong to any restaurant");
+        }
+        Long restaurantId = user.getRestaurant().getId();
 
         Recipe recipe = recipeRepository.findByIdAndRestaurantIdAndIsDeletedFalse(recipeId, restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Recipe not found"));
 
         List<RecipeItem> items = recipeItemRepository.findByRecipeId(recipeId);
         return mapToResponseDTO(recipe, items);
+    }
+
+    @Transactional
+    public RecipeResponseDTO updateRecipe(Long userId, Long recipeId, RecipeRequestDTO requestDTO) {
+        // Validate User and Access Level
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!user.getIsActive()) {
+            throw new IllegalArgumentException("User is not active");
+        }
+        if (user.getRestaurant() == null) {
+            throw new IllegalArgumentException("User does not belong to any restaurant");
+        }
+        if (user.getAccessLevel() < AppConstants.ACCESS_LEVEL_MANAGER) {
+            throw new IllegalArgumentException("User does not have permission to update recipes");
+        }
+        Long restaurantId = user.getRestaurant().getId();
+
+        Recipe recipe = recipeRepository.findByIdAndRestaurantIdAndIsDeletedFalse(recipeId, restaurantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found"));
+
+        // 1. Update Recipe fields
+        recipe.setName(requestDTO.getName());
+        recipe.setDescription(requestDTO.getDescription());
+        Recipe savedRecipe = recipeRepository.save(recipe);
+
+        // 2. Delete existing RecipeItems
+        recipeItemRepository.deleteByRecipeId(recipeId);
+
+        // 3. Create and save new RecipeItems
+        List<RecipeItem> items = requestDTO.getItems().stream().map(itemDTO -> {
+            InventoryMaterial material = inventoryMaterialRepository
+                    .findByIdAndRestaurantIdAndIsActiveTrueAndIsDeletedFalse(itemDTO.getRawMaterialId(), restaurantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Raw material not found for ID: " + itemDTO.getRawMaterialId()));
+
+            RecipeItem item = new RecipeItem();
+            item.setRecipe(savedRecipe);
+            item.setRawMaterial(material);
+            item.setQuantity(itemDTO.getQuantity());
+            return recipeItemRepository.save(item);
+        }).collect(Collectors.toList());
+
+        return mapToResponseDTO(savedRecipe, items);
     }
 
     // Helper mapping method

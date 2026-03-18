@@ -12,10 +12,12 @@ import java.util.Optional;
 @Repository
 public interface InventoryMaterialRepository extends JpaRepository<InventoryMaterial, Long> {
 
-    // Find by SKU and restaurant (to ensure SKU is unique per restaurant)
     Optional<InventoryMaterial> findBySkuAndRestaurantId(String sku, Long restaurantId);
+    
+    // Find active (non-deleted) item by SKU and restaurant
+    Optional<InventoryMaterial> findBySkuAndRestaurantIdAndIsDeletedFalse(String sku, Long restaurantId);
 
-    // Get all active (non-deleted) inventory items for a restaurant
+    // Get all active (-deleted) inventory items for a restaurant
     List<InventoryMaterial> findByRestaurantIdAndIsDeletedFalse(Long restaurantId);
 
     // Search by exact name for a specific restaurant (non-deleted items only) - exact match, case-insensitive
