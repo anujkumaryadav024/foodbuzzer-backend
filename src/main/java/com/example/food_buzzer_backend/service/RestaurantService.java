@@ -39,16 +39,16 @@ public class RestaurantService {
             return new CreateRestaurantResponse(null, AppConstants.ERROR_INSUFFICIENT_ACCESS);
         }
 
-        if (restaurantRepository.existsBySlug(request.getSlug())) {
-            return new CreateRestaurantResponse(null, "Slug '" + request.getSlug() + "' is already taken, please choose another.");
-        }
+        // if (restaurantRepository.existsBySlug(request.getSlug())) {
+        //     return new CreateRestaurantResponse(null, "Slug '" + request.getSlug() + "' is already taken, please choose another.");
+        // }
 
         Restaurant restaurant = new Restaurant();
 
         restaurant.setName(request.getName());
-        restaurant.setSlug(request.getSlug());
+        // restaurant.setSlug(request.getSlug());
         restaurant.setAddress(request.getAddress());
-        restaurant.setCity(request.getCity());
+        restaurant.setGST(request.getGST());
         restaurant.setZipcode(request.getZipcode());
         restaurant.setPhone(request.getPhone());
         restaurant.setOwner(owner);

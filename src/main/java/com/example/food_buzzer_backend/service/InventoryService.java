@@ -19,6 +19,11 @@ import java.util.stream.Collectors;
 /**
  * Service class for handling inventory material business logic
  * Contains methods for CRUD operations on inventory items
+ * 
+ * All operations are now user-centric:
+ * - User ID is provided in the request
+ * - User's restaurant is fetched from the users table
+ * - User must be active and have a valid restaurant_id
  */
 @Service
 public class InventoryService {
@@ -38,32 +43,67 @@ public class InventoryService {
     }
 
     /**
-     * Get all inventory items for a specific restaurant (excluding deleted items)
-     * @param restaurantId - ID of the restaurant
-     * @param userId - ID of the user (for validation/context)
-     * @return List of InventoryMaterialResponse objects containing all inventory items, or null if restaurant/user not found
+     * Public helper method to validate user and extract restaurant ID
+     * Can be used by controllers to validate user before calling service methods
+     * @param userId - ID of the user
+     * @return Restaurant ID if user is valid, active, and has a restaurant; null otherwise
      */
-    public List<InventoryMaterialResponse> getAllInventoryItems(Long restaurantId, Long userId) {
-        logger.info("getAllInventoryItems called with restaurantId: {} and userId: {}", restaurantId, userId);
+    public Long validateUser(Long userId) {
+        return validateUserAndGetRestaurantId(userId);
+    }
+
+    /**
+     * Helper method to validate user and extract restaurant ID
+     * @param userId - ID of the user
+     * @return Restaurant ID if user is valid, active, and has a restaurant; null otherwise
+     */
+    private Long validateUserAndGetRestaurantId(Long userId) {
+        logger.info("Validating user ID: {}", userId);
         
-        // Validate that both restaurant and user exist
-        boolean restaurantExists = restaurantRepository.existsById(restaurantId);
-        boolean userExists = userRepository.existsById(userId);
+        // Check if user exists
+        User user = userRepository.findById(userId).orElse(null);
         
-        logger.info("Restaurant {} exists: {}, User {} exists: {}", restaurantId, restaurantExists, userId, userExists);
-        
-        if (!restaurantExists || !userExists) {
-            logger.warn("Validation failed: Restaurant or user not found");
-            return null; // Restaurant or user not found - return null
+        if (user == null) {
+            logger.warn("User {} not found", userId);
+            return null;
         }
         
-        // Fetch all non-deleted inventory items from database
+        // Check if user is active
+        if (!user.getIsActive()) {
+            logger.warn("User {} is not active", userId);
+            return null;
+        }
+        
+        // Check if user has a restaurant assigned
+        if (user.getRestaurant() == null || user.getRestaurant().getId() == null) {
+            logger.warn("User {} does not have a restaurant assigned", userId);
+            return null;
+        }
+        
+        logger.info("User {} validated successfully. Restaurant ID: {}", userId, user.getRestaurant().getId());
+        return user.getRestaurant().getId();
+    }
+
+    /**
+     * Get all inventory items for the restaurant associated with the user
+     * @param userId - ID of the user
+     * @return List of InventoryMaterialResponse objects or null if user is invalid
+     */
+    public List<InventoryMaterialResponse> getAllInventoryItems(Long userId) {
+        logger.info("getAllInventoryItems called with userId: {}", userId);
+        
+        // Validate user and get restaurant ID
+        Long restaurantId = validateUserAndGetRestaurantId(userId);
+        
+        if (restaurantId == null) {
+            logger.warn("User validation failed for userId: {}", userId);
+            return null;
+        }
+        
+        // Fetch all non-deleted inventory items for this restaurant
         List<InventoryMaterial> materials = inventoryMaterialRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId);
         
         logger.info("Found {} inventory items for restaurant {}", materials.size(), restaurantId);
-        for (InventoryMaterial material : materials) {
-            logger.info("Item: id={}, name={}, isDeleted={}", material.getId(), material.getName(), material.getIsDeleted());
-        }
         
         // Convert to response DTOs and return
         return materials.stream()
@@ -72,36 +112,39 @@ public class InventoryService {
     }
 
     /**
-     * Add a new inventory item to the database
-     * @param request - CreateInventoryMaterialRequest containing item details (name, sku, category, unit, currentStock, reorderLevel, costPerUnit)
-     * @param restaurantId - ID of the restaurant
-     * @param userId - ID of the user creating this item
-     * @return InventoryMaterialResponse with created item details, or null if restaurant/user not found or SKU already exists
+     * Add a new inventory item to the restaurant associated with the user
+     * @param request - CreateInventoryMaterialRequest containing item details
+     * @param userId - ID of the user
+     * @return InventoryMaterialResponse with created item details, or null if validation fails or SKU already exists
      */
-    public InventoryMaterialResponse addInventoryItem(CreateInventoryMaterialRequest request, Long restaurantId, Long userId) {
-        // Check if restaurant exists
+    public InventoryMaterialResponse addInventoryItem(CreateInventoryMaterialRequest request, Long userId) {
+        logger.info("addInventoryItem called with userId: {}", userId);
+        
+        // Validate user and get restaurant ID
+        Long restaurantId = validateUserAndGetRestaurantId(userId);
+        
+        if (restaurantId == null) {
+            logger.warn("User validation failed for userId: {}", userId);
+            return null;
+        }
+        
+        // Fetch restaurant object
         Restaurant restaurant = restaurantRepository.findById(restaurantId).orElse(null);
         
         if (restaurant == null) {
-            return null; // Restaurant not found
+            logger.error("Restaurant with ID {} not found", restaurantId);
+            return null;
         }
-
-        // Check if user exists
-        User user = userRepository.findById(userId).orElse(null);
         
-        if (user == null) {
-            return null; // User not found
+        // Check if SKU already exists for this restaurant (SKU must be unique per restaurant)
+        if (inventoryMaterialRepository.findBySkuAndRestaurantId(request.getSku(), restaurantId).isPresent()) {
+            logger.warn("Item with SKU {} already exists for restaurant {}", request.getSku(), restaurantId);
+            return null; // SKU already exists for this restaurant
         }
-
-        // Check if SKU already exists (SKU must be unique)
-        if (inventoryMaterialRepository.findBySku(request.getSku()).isPresent()) {
-            return null; // SKU already exists
-        }
-
+        
         // Create new inventory material entity
         InventoryMaterial material = new InventoryMaterial();
         material.setRestaurant(restaurant);
-        material.setUser(user);
         material.setName(request.getName());
         material.setSku(request.getSku());
         material.setCategory(request.getCategory());
@@ -111,40 +154,48 @@ public class InventoryService {
         material.setCostPerUnit(request.getCostPerUnit());
         material.setIsDeleted(false); // By default, item is not deleted
         material.setIsActive(true); // By default, item is active
-
+        
         // Save to database
         InventoryMaterial savedMaterial = inventoryMaterialRepository.save(material);
+        
+        logger.info("Inventory item created successfully: id={}, sku={}", savedMaterial.getId(), savedMaterial.getSku());
         
         // Return response DTO
         return mapToResponse(savedMaterial);
     }
 
     /**
-     * Update an inventory item record with all provided fields
+     * Update an inventory item record
      * @param itemId - ID of the inventory item to update
-     * @param restaurantId - ID of the restaurant (to verify ownership)
-     * @param userId - ID of the user (to verify ownership)
-     * @param request - UpdateInventoryStockRequest containing fields to update (partial updates supported)
-     * @return InventoryMaterialResponse with updated item details, or null if item not found or restaurant/user doesn't match
+     * @param userId - ID of the user (for validation and restaurant extraction)
+     * @param request - UpdateInventoryStockRequest containing fields to update
+     * @return InventoryMaterialResponse with updated item details, or null if validation fails
      */
-    public InventoryMaterialResponse updateInventoryStock(Long itemId, Long restaurantId, Long userId, UpdateInventoryStockRequest request) {
+    public InventoryMaterialResponse updateInventoryStock(Long itemId, Long userId, UpdateInventoryStockRequest request) {
+        logger.info("updateInventoryStock called with itemId: {}, userId: {}", itemId, userId);
+        
+        // Validate user and get restaurant ID
+        Long restaurantId = validateUserAndGetRestaurantId(userId);
+        
+        if (restaurantId == null) {
+            logger.warn("User validation failed for userId: {}", userId);
+            return null;
+        }
+        
         // Find inventory item by ID
         InventoryMaterial material = inventoryMaterialRepository.findById(itemId).orElse(null);
         
         if (material == null) {
-            return null; // Item not found
+            logger.warn("Inventory item with ID {} not found", itemId);
+            return null;
         }
-
-        // Verify that the item belongs to the specified restaurant
+        
+        // Verify that the item belongs to the user's restaurant
         if (!material.getRestaurant().getId().equals(restaurantId)) {
-            return null; // Restaurant ID doesn't match the item's restaurant
+            logger.warn("Item {} does not belong to restaurant {}", itemId, restaurantId);
+            return null;
         }
-
-        // Verify that the item belongs to the specified user
-        if (!material.getUser().getId().equals(userId)) {
-            return null; // User ID doesn't match the item's user
-        }
-
+        
         // Update fields only if they are provided (non-null)
         if (request.getName() != null) {
             material.setName(request.getName());
@@ -175,61 +226,77 @@ public class InventoryService {
         // Save updated item to database
         InventoryMaterial updatedMaterial = inventoryMaterialRepository.save(material);
         
+        logger.info("Inventory item updated successfully: id={}", updatedMaterial.getId());
+        
         // Return response DTO
         return mapToResponse(updatedMaterial);
     }
 
     /**
-     * Soft delete an inventory item (sets is_delete to true instead of removing from database)
+     * Soft delete an inventory item
      * @param itemId - ID of the inventory item to delete
-     * @param restaurantId - ID of the restaurant (to verify ownership)
-     * @param userId - ID of the user (to verify ownership)
-     * @return InventoryMaterialResponse with deleted item details, or null if item not found or restaurant/user doesn't match
+     * @param userId - ID of the user (for validation and restaurant extraction)
+     * @return InventoryMaterialResponse with deleted item details, or null if validation fails
      */
-    public InventoryMaterialResponse deleteInventoryItem(Long itemId, Long restaurantId, Long userId) {
+    public InventoryMaterialResponse deleteInventoryItem(Long itemId, Long userId) {
+        logger.info("deleteInventoryItem called with itemId: {}, userId: {}", itemId, userId);
+        
+        // Validate user and get restaurant ID
+        Long restaurantId = validateUserAndGetRestaurantId(userId);
+        
+        if (restaurantId == null) {
+            logger.warn("User validation failed for userId: {}", userId);
+            return null;
+        }
+        
         // Find inventory item by ID
         InventoryMaterial material = inventoryMaterialRepository.findById(itemId).orElse(null);
         
         if (material == null) {
-            return null; // Item not found
+            logger.warn("Inventory item with ID {} not found", itemId);
+            return null;
         }
-
-        // Verify that the item belongs to the specified restaurant
+        
+        // Verify that the item belongs to the user's restaurant
         if (!material.getRestaurant().getId().equals(restaurantId)) {
-            return null; // Restaurant ID doesn't match the item's restaurant
+            logger.warn("Item {} does not belong to restaurant {}", itemId, restaurantId);
+            return null;
         }
-
-        // Verify that the item belongs to the specified user
-        if (!material.getUser().getId().equals(userId)) {
-            return null; // User ID doesn't match the item's user
-        }
-
+        
         // Mark item as deleted (soft delete - record stays in database)
         material.setIsDeleted(true);
         
         // Save updated item to database
         InventoryMaterial deletedMaterial = inventoryMaterialRepository.save(material);
         
+        logger.info("Inventory item deleted successfully: id={}", deletedMaterial.getId());
+        
         // Return response DTO
         return mapToResponse(deletedMaterial);
     }
 
     /**
-     * Search for inventory items by exact name (case-insensitive) for a specific restaurant
-     * @param restaurantId - ID of the restaurant
-     * @param userId - ID of the user (for validation)
-     * @param name - Exact name of the item to search for (case-insensitive, must match full name)
-     * @return List of InventoryMaterialResponse objects matching the search criteria, or null if restaurant/user not found
+     * Search for inventory items by exact name for the user's restaurant
+     * @param userId - ID of the user (for validation and restaurant extraction)
+     * @param name - Exact name of the item to search for (case-insensitive)
+     * @return List of InventoryMaterialResponse objects or null if user is invalid
      */
-    public List<InventoryMaterialResponse> searchByName(Long restaurantId, Long userId, String name) {
-        // Validate that both restaurant and user exist
-        if (!restaurantRepository.existsById(restaurantId) || !userRepository.existsById(userId)) {
-            return null; // Restaurant or user not found - return null
+    public List<InventoryMaterialResponse> searchByName(Long userId, String name) {
+        logger.info("searchByName called with userId: {}, name: {}", userId, name);
+        
+        // Validate user and get restaurant ID
+        Long restaurantId = validateUserAndGetRestaurantId(userId);
+        
+        if (restaurantId == null) {
+            logger.warn("User validation failed for userId: {}", userId);
+            return null;
         }
         
         // Search for items with exact name match (case-insensitive), excluding deleted items
         List<InventoryMaterial> materials = inventoryMaterialRepository
                 .findByNameIgnoreCaseAndRestaurantIdAndIsDeletedFalse(name, restaurantId);
+        
+        logger.info("Found {} items matching name '{}' for restaurant {}", materials.size(), name, restaurantId);
         
         // Convert to response DTOs and return (may be empty if no exact match found)
         return materials.stream()
@@ -238,33 +305,25 @@ public class InventoryService {
     }
 
     /**
-     * Get all inventory items that are running on low stock (current_stock < reorderLevel)
-     * @param restaurantId - ID of the restaurant
-     * @param userId - ID of the user (for validation)
-     * @return List of InventoryMaterialResponse objects for items with low stock, or null if restaurant/user not found
+     * Get all inventory items that are running on low stock for the user's restaurant
+     * @param userId - ID of the user (for validation and restaurant extraction)
+     * @return List of InventoryMaterialResponse objects for low stock items, or null if user is invalid
      */
-    public List<InventoryMaterialResponse> getLowStockItems(Long restaurantId, Long userId) {
-        logger.info("getLowStockItems called with restaurantId: {} and userId: {}", restaurantId, userId);
+    public List<InventoryMaterialResponse> getLowStockItems(Long userId) {
+        logger.info("getLowStockItems called with userId: {}", userId);
         
-        // Validate that both restaurant and user exist
-        boolean restaurantExists = restaurantRepository.existsById(restaurantId);
-        boolean userExists = userRepository.existsById(userId);
+        // Validate user and get restaurant ID
+        Long restaurantId = validateUserAndGetRestaurantId(userId);
         
-        logger.info("Restaurant {} exists: {}, User {} exists: {}", restaurantId, restaurantExists, userId, userExists);
-        
-        if (!restaurantExists || !userExists) {
-            logger.warn("Validation failed: Restaurant or user not found");
-            return null; // Restaurant or user not found - return null
+        if (restaurantId == null) {
+            logger.warn("User validation failed for userId: {}", userId);
+            return null;
         }
         
         // Fetch all items where current_stock < reorderLevel and is_deleted = false
         List<InventoryMaterial> materials = inventoryMaterialRepository.findLowStockItems(restaurantId);
         
         logger.info("Found {} low stock items for restaurant {}", materials.size(), restaurantId);
-        for (InventoryMaterial material : materials) {
-            logger.info("Low stock item: id={}, name={}, currentStock={}, reorderLevel={}", 
-                    material.getId(), material.getName(), material.getCurrentStock(), material.getReorderLevel());
-        }
         
         // Convert to response DTOs and return
         return materials.stream()
@@ -281,7 +340,6 @@ public class InventoryService {
         return new InventoryMaterialResponse(
                 material.getId(),
                 material.getRestaurant().getId(),
-                material.getUser().getId(),
                 material.getName(),
                 material.getSku(),
                 material.getCategory(),

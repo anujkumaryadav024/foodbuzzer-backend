@@ -39,7 +39,7 @@ public class AdminService {
                 restaurant.getName(),
                 restaurant.getSlug(),
                 restaurant.getAddress(),
-                restaurant.getCity(),
+                restaurant.getGST(),
                 restaurant.getZipcode(),
                 restaurant.getPhone(),
                 restaurant.getApprovalStatus(),

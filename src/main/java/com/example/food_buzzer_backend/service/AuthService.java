@@ -25,30 +25,30 @@ public class AuthService {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
 
         if(userOptional.isEmpty()){
-            return new LoginResponse(null, null, AppConstants.MSG_INVALID_CREDENTIALS);
+            return new LoginResponse(null, null, null, AppConstants.MSG_INVALID_CREDENTIALS);
         }
 
         User user = userOptional.get();
 
         if(!user.getPassword().equals(request.getPassword())){
-            return new LoginResponse(null, null, AppConstants.MSG_INVALID_CREDENTIALS);
+            return new LoginResponse(null, null, null, AppConstants.MSG_INVALID_CREDENTIALS);
         }
 
         if(!user.getIsActive()){
-            return new LoginResponse(null, null, AppConstants.MSG_USER_INACTIVE);
+            return new LoginResponse(null, null, null, AppConstants.MSG_USER_INACTIVE);
         }
 
         if(user.getRestaurant() == null){
-            return new LoginResponse(user.getId(), user.getRole(), AppConstants.MSG_USER_NOT_ASSIGNED_TO_RESTAURANT);
+            return new LoginResponse(user.getId(), user.getRole(), user.getAccessLevel(), AppConstants.MSG_USER_NOT_ASSIGNED_TO_RESTAURANT);
         }
 
-        return new LoginResponse(user.getId(), user.getRole(), AppConstants.MSG_LOGIN_SUCCESSFUL);
+        return new LoginResponse(user.getId(), user.getRole(), user.getAccessLevel(), AppConstants.MSG_LOGIN_SUCCESSFUL);
     }
 
     public RegisterOwnerResponse registerOwner(RegisterOwnerRequest request){
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            return new RegisterOwnerResponse(null, null, AppConstants.MSG_EMAIL_ALREADY_REGISTERED);
+            return new RegisterOwnerResponse(null, null, null, AppConstants.MSG_EMAIL_ALREADY_REGISTERED);
         }
 
         User user = new User();
@@ -61,6 +61,6 @@ public class AuthService {
 
         userRepository.save(user);
 
-        return new RegisterOwnerResponse(user.getId(), user.getRole(), AppConstants.MSG_OWNER_REGISTERED_SUCCESSFUL);
+        return new RegisterOwnerResponse(user.getId(), user.getRole(), user.getAccessLevel(), AppConstants.MSG_OWNER_REGISTERED_SUCCESSFUL);
     }
 }

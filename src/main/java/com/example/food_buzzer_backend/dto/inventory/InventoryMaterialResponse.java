@@ -11,7 +11,6 @@ public class InventoryMaterialResponse {
 
     private Long id;
     private Long restaurantId;
-    private Long userId;
     private String name;
     private String sku;
     private String category;
@@ -29,14 +28,13 @@ public class InventoryMaterialResponse {
     /**
      * Constructor with all parameters for creating response object
      */
-    public InventoryMaterialResponse(Long id, Long restaurantId, Long userId, String name, String sku, 
+    public InventoryMaterialResponse(Long id, Long restaurantId, String name, String sku, 
                                      String category, String unit, Double currentStock, 
                                      Double reorderLevel, BigDecimal costPerUnit, 
                                      Boolean isActive, Boolean isDeleted, 
                                      LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.restaurantId = restaurantId;
-        this.userId = userId;
         this.name = name;
         this.sku = sku;
         this.category = category;
@@ -66,15 +64,6 @@ public class InventoryMaterialResponse {
 
     public void setRestaurantId(Long restaurantId) {
         this.restaurantId = restaurantId;
-    }
-
-    // Getter and Setter for userId
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
     }
 
     // Getter and Setter for name

@@ -41,9 +41,12 @@ logs/
 .env
 .env.local
 .env.*.local
+application.properties
+application-*.properties
+application.yml
+application-*.yml
 application-local.properties
 application-local.yml
-application.properties
 **/secrets/
 
 ### OS ###

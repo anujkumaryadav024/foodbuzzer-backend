@@ -6,7 +6,7 @@ public class RestaurantDetailsResponse {
     private String name;
     private String slug;
     private String address;
-    private String city;
+    private String gst;
     private String zipcode;
     private String phone;
     private String approvalStatus;
@@ -23,7 +23,7 @@ public class RestaurantDetailsResponse {
             String name,
             String slug,
             String address,
-            String city,
+            String gst,
             String zipcode,
             String phone,
             String approvalStatus,
@@ -36,7 +36,7 @@ public class RestaurantDetailsResponse {
         this.name = name;
         this.slug = slug;
         this.address = address;
-        this.city = city;
+        this.gst = gst;
         this.zipcode = zipcode;
         this.phone = phone;
         this.approvalStatus = approvalStatus;
@@ -62,8 +62,8 @@ public class RestaurantDetailsResponse {
         return address;
     }
 
-    public String getCity() {
-        return city;
+    public String getGST() {
+        return gst;
     }
 
     public String getZipcode() {
