@@ -7,20 +7,17 @@ public class CreateRestaurantRequest {
     @NotBlank(message = "Name is required")
     private String name;
 
-    @NotBlank(message = "Slug is required")
-    private String slug;
-
     @NotBlank(message = "Address is required")
     private String address;
-
-    @NotBlank(message = "City is required")
-    private String city;
 
     @NotBlank(message = "Zipcode is required")
     private String zipcode;
 
     @NotBlank(message = "Phone number is required")
     private String phone;
+
+    @NotBlank(message = "GST is required")
+    private String gst;
 
     public CreateRestaurantRequest(){}
 
@@ -32,14 +29,6 @@ public class CreateRestaurantRequest {
         this.name = name;
     }
 
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
     public String getAddress() {
         return address;
     }
@@ -48,12 +37,12 @@ public class CreateRestaurantRequest {
         this.address = address;
     }
 
-    public String getCity() {
-        return city;
+    public String getGST() {
+        return gst;
     }
 
-    public void setCity(String city) {
-        this.city = city;
+    public void setGST(String gst) {
+        this.gst = gst;
     }
 
     public String getZipcode() {

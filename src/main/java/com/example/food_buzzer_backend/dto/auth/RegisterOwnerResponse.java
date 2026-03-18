@@ -4,11 +4,13 @@ public class RegisterOwnerResponse {
 
     private Long userId;
     private String role;
+    private Integer accessLevel;
     private String message;
 
-    public RegisterOwnerResponse(Long userId, String role, String message){
+    public RegisterOwnerResponse(Long userId, String role, Integer accessLevel, String message){
         this.userId = userId;
         this.role = role;
+        this.accessLevel = accessLevel;
         this.message = message;
     }
 
@@ -34,5 +36,13 @@ public class RegisterOwnerResponse {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public void setAccessLevel(Integer accessLevel){
+        this.accessLevel = accessLevel;
+    }
+
+    public Integer getAccessLevel(){
+        return accessLevel;
     }
 }

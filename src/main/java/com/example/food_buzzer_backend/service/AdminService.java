@@ -37,7 +37,7 @@ public class AdminService {
                 r.getName(),
                 r.getSlug(),
                 r.getAddress(),
-                r.getCity(),
+                r.getGST(),
                 r.getZipcode(),
                 r.getPhone(),
                 r.getApprovalStatus(),

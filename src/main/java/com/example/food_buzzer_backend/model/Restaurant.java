@@ -18,7 +18,7 @@ public class Restaurant {
 
     private String address;
 
-    private String city;
+    private String gst;
 
     private String zipcode;
 
@@ -41,6 +41,11 @@ public class Restaurant {
         createdAt = LocalDateTime.now();
     }
 
+    @PostPersist
+    public void generateSlug(){
+        slug = this.name.toLowerCase().trim().replaceAll(" ","-")+"-"+this.id;
+    }
+
     public Restaurant(){}
 
     public Long getId(){ return id; }
@@ -57,9 +62,9 @@ public class Restaurant {
 
     public void setAddress(String address){ this.address = address; }
 
-    public String getCity(){ return city; }
+    public String getGST(){ return gst; }
 
-    public void setCity(String city){ this.city = city; }
+    public void setGST(String gst){ this.gst = gst; }
 
     public String getZipcode(){ return zipcode; }
 
